@@ -1,0 +1,63 @@
+ CORS Nedir?
+
+       Web tarayıcılarının farklı alan adlarından (domain, protokol veya port) kaynaklara erişimi güvenli bir şekilde yönetmesini sağlayan bir HTTP mekanizmasıdır.
+
+CORS Hatası Neden Ortaya Çıkar?
+
+    CORS hatası genellikle şu durumda ortaya çıkar: Web sayfanız, bir API'ye veri göndermek veya veri almak için farklı bir domain (alan adı) kullanıyordur. Tarayıcı, bu istekleri aynı kaynak kısıtlaması nedeniyle engeller. Kısaca, tarayıcı "Bu isteği gönderemezsin, çünkü güvenlik nedeniyle bunu engelliyorum" der ve karşınıza CORS hatası çıkar.
+
+    Birçok geliştirici, API'ye erişim sağlarken CORS hatasıyla karşılaşır. Örneğin, front-end uygulamanız `http://localhost:3000` üzerinden çalışırken, arka uç API'niz `https://api.example.com` üzerinden çalışıyor olabilir. Tarayıcı, bir kaynağa başka bir kaynaktan yapılan istekleri genellikle engeller.
+
+CORS Hatası Çözüm Yolları
+
+CORS hatalarını çözmek bazen kafa karıştırıcı olabilir, ancak birkaç farklı yöntemle bu sorunu aşmak mümkündür. İşte en yaygın çözüm yolları:
+
+1. API Sunucusunda CORS Ayarlarını Yapılandırmak
+
+    Eğer kontrolünüzde bir API varsa, API sunucusunda CORS başlıklarını doğru şekilde ayarlamak, hatayı çözmenin en etkili yoludur. API sunucusunda, dışarıdan gelen istekleri kabul etmek için Access-Control-Allow-Origin başlığı eklenmelidir.
+
+    app.use((req, res, next) => {
+
+    res.header('Access-Control-Allow-Origin', '*');  // Her yerden gelen isteklere izin verir
+
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+    next();
+
+    });
+
+    JavaScript
+
+2. Proxy Kullanmak
+
+    Eğer API'ye erişim sağlayamıyorsanız, proxy kullanmak bir çözüm olabilir. Proxy, bir tür aracı sunucu görevi görerek, CORS hatalarını aşmanıza yardımcı olabilir. Geliştirme aşamasında, webpack dev server gibi araçlar üzerinden proxy ayarlarını yaparak, isteklerinizi yönlendirebilirsiniz.
+
+    devServer: {
+
+    proxy: 'https://api.example.com'
+
+    }
+
+    JavaScript
+
+3. JSONP Yöntemi
+
+    Eski yöntemlerden biri olan JSONP (JSON with Padding), CORS hatalarını aşmanıza yardımcı olabilir. Ancak, bu yöntem sadece GET istekleriyle çalışır ve güvenlik açısından daha modern yöntemlere göre riskli olabilir.
+
+4. Tarayıcı Eklentileri Kullanmak
+
+    Geliştiriciler için, test aşamasında tarayıcı eklentileri kullanmak da bir seçenek olabilir. Tarayıcıda çalıştığınız süre boyunca CORS kısıtlamalarını devre dışı bırakmanızı sağlayan bazı tarayıcı uzantıları mevcuttur. Ancak bu yöntem, yalnızca geliştirme aşamasında kullanılmalıdır ve güvenlik açısından önerilmez.
+
+Sonuç
+
+    CORS hataları, web geliştirme dünyasında sıkça karşılaşılan ve çoğu zaman kafa karıştırıcı olan hatalardır. Ancak, doğru yöntemleri kullanarak bu hatayı çözmek mümkündür. API sunucusunda doğru CORS başlıklarını ayarlamak, proxy kullanmak veya geçici olarak tarayıcı uzantılarıyla çözüm aramak, yaygın çözüm yollarıdır. Unutmayın, güvenlik her şeyden önce gelir, bu nedenle çözüm yöntemlerinizi her zaman güvenlik odaklı değerlendirin.
+    Ör:
+        Bir sitede origin'e yanıt veriyorsa (https://miro.medium.com/v2/resize:fit:720/format:webp/1*c9qYi8GMvTFW5jYWii9jyg.png) kendi web sitemize
+        yönlendirme yaptırırız ve 200 gelirse kendi sitemize zararlı javascript kodu enjekte ederek admin veya Kullanıcının apisini çalabiliriz ve böylece erişim yapabiliriz.
+        Örnek javascript kodu (https://miro.medium.com/v2/resize:fit:720/format:webp/1*R-ao9aDIzeZqs6Wr8fCHyg.png)
+        Örnek api düşürülmüş kod (https://miro.medium.com/v2/resize:fit:720/format:webp/1*ueY3c0Rg-XtyslvsZ-60MQ.png)
+Kaynakça:
+    https://haktanemik.medium.com/cors-nedir-8a69c65c3d92
+    https://ariarif.medium.com/portswigger-web-security-cors-cross-origin-resource-sharing-lab-%C3%A7%C3%B6z%C3%BCmleri%CC%87-6974a9de3174

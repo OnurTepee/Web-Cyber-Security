@@ -1,0 +1,211 @@
+Komut Enjeksiyonu – Örnek Kodlarla Saldırı ve Savunma
+(White-Box ve Black-Box Perspektifi)
+
+Bu bölümde aynı işlevin:
+
+Zafiyetli (saldırıya açık)
+
+Sömürülmüş (exploit edilmiş)
+
+Güvenli (defansif)
+
+Yanlış ama sık sanılan “güvenli”
+
+hâllerini göreceksin.
+
+1️⃣ ZAFİYETLİ KOD (Command Injection VARDIR)
+Senaryo
+
+Kullanıcıdan IP alıp ping atan bir web servisi.
+
+❌ Python – Zafiyetli Kod
+import os
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route("/ping")
+def ping():
+    ip = request.args.get("ip")
+    os.system("ping -c 1 " + ip)
+    return "Ping gönderildi"
+
+White-Box Analiz
+Kontrol	Durum
+Kullanıcı girdisi	✅ Var
+Shell çağrısı	✅ os.system
+String birleştirme	✅ Var
+Shell operatörleri çalışır mı	✅ Evet
+
+➡ Kesin komut enjeksiyonu
+
+2️⃣ SALDIRI (EXPLOIT)
+Black-Box Payload
+8.8.8.8; whoami
+
+Gerçekte Çalışan Komut
+ping -c 1 8.8.8.8; whoami
+
+Sonuç
+
+ping çalışır
+
+whoami çalışır
+
+Saldırgan uygulamanın çalıştığı kullanıcıyı öğrenir
+
+➡ OS seviyesinde keyfi komut yürütme
+
+3️⃣ BLIND (KÖR) COMMAND INJECTION ÖRNEĞİ
+Payload
+8.8.8.8; sleep 10
+
+Gözlem
+
+HTTP yanıtı 10 saniye gecikir
+
+➡ Çıktı yok ama komut çalışıyor
+➡ Blind Command Injection
+
+4️⃣ “BU COMMAND INJECTION DEĞİL” ÖRNEĞİ (ÇOK ÖNEMLİ)
+✅ Güvenli Python Kodu
+import subprocess
+
+@app.route("/ping")
+def ping():
+    ip = request.args.get("ip")
+    subprocess.run(
+        ["ping", "-c", "1", ip],
+        shell=False
+    )
+    return "Ping gönderildi"
+
+Aynı Payload
+8.8.8.8; whoami
+
+Sonuç
+ping: unknown host 8.8.8.8; whoami
+
+Analiz
+Kriter	Sonuç
+Komut çalıştı mı	❌
+Shell yorumladı mı	❌
+OS komutu yürütüldü mü	❌
+
+➡ Bu Command Injection DEĞİLDİR
+
+5️⃣ “YANLIŞ GÜVENLİ” KOD (Sık Yapılan Hata)
+❌ Kara Liste ile “Koruma”
+ip = request.args.get("ip")
+ip = ip.replace(";", "")
+os.system("ping -c 1 " + ip)
+
+Bypass Payload
+8.8.8.8 && whoami
+
+
+➡ Hâlâ kırılır
+
+Kara liste ≠ Savunma
+
+6️⃣ GERÇEK SAVUNMA – WHITELIST + PARAMETRELİ ÇAĞRI
+✅ Güvenli ve Doğru Çözüm
+import re
+import subprocess
+
+ip = request.args.get("ip")
+
+ip_regex = r"^\d{1,3}(\.\d{1,3}){3}$"
+if not re.match(ip_regex, ip):
+    return "Geçersiz IP", 400
+
+subprocess.run(
+    ["ping", "-c", "1", ip],
+    shell=False
+)
+
+Savunma Katmanları
+Katman	Var mı
+Shell kaldırıldı	✅
+Parametreli çağrı	✅
+Whitelist	✅
+Kara liste	❌
+Regex	✅
+
+➡ Command Injection İMKÂNSIZ
+
+7️⃣ ORTAM DEĞİŞKENİ KAYNAKLI COMMAND INJECTION (WHITE-BOX)
+❌ C – Zafiyetli Kod
+system("make");
+
+White-Box Sorun
+
+make tam yol değil
+
+$PATH manipüle edilebilir
+
+🔴 Saldırı
+export PATH=/tmp/malicious:$PATH
+
+
+➡ Zararlı make root olarak çalışır
+
+✅ Güvenli Hâli
+system("/usr/bin/make");
+
+
+veya
+
+execve("/usr/bin/make", args, clean_env);
+
+8️⃣ Node.js Örneği (ÇOK SORULUR)
+❌ Zafiyetli
+const { exec } = require("child_process");
+
+exec("ls " + userInput);
+
+✅ Güvenli
+const { execFile } = require("child_process");
+
+execFile("/bin/ls", [userInput]);
+
+9️⃣ NET KARŞILAŞTIRMA TABLOSU
+Kod	Command Injection
+os.system()	❌ Var
+exec()	❌ Var
+shell=True	❌ Var
+execFile()	✅ Yok
+subprocess.run(..., shell=False)	✅ Yok
+Yerleşik API	✅ Yok
+🔚 SONUÇ (EN NET HALİYLE)
+
+Command Injection vardır eğer:
+
+Shell çalışıyorsa
+
+Kullanıcı girdisi shell’e gidiyorsa
+
+Girdi komut olarak yorumlanıyorsa
+
+Command Injection yoktur eğer:
+
+Shell yoksa
+
+Girdi sadece argümansa
+
+Parametreli çağrı varsa
+
+En iyi savunma: Shell’i öldür.
+
+Kaynakça:
+https://owasp.org/www-project-cheat-sheets/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html
+https://owasp.org/Top10/2021/A03_2021-Injection/
+https://cwe.mitre.org/data/definitions/78.html
+https://portswigger.net/web-security/os-command-injection
+https://portswigger.net/burp/documentation/desktop/testing-workflow/input-validation/command-injection
+https://attack.mitre.org/techniques/T1059/
+https://csrc.nist.gov/publications/detail/sp/800-53/rev-5/final
+https://docs.aws.amazon.com/codeguru/detector-library/c/os-command-injection/
+https://docs.aws.amazon.com/codeguru/detector-library/php/os-command-injection/
+https://www.veracode.com/security/cwe-78
+https://www.sans.org/top25-software-errors/cwe-78/

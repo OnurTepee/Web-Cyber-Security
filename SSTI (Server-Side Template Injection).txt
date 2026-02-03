@@ -1,0 +1,111 @@
+Sunucu Tarafı Şablon Enjeksiyonu Nedir?
+
+SSTI, kullanıcı girdisinin uygun şekilde temizlenmeden sunucu tarafı şablonlarına dinamik olarak enjekte edilmesi durumunda ortaya çıkar. Bu şablonlar genellikle dinamik içeriğin oluşturulması için kullanılır, ancak mantık işleyebilir, hesaplamalar yapabilir veya hatta kod çalıştırabilirler. Saldırgan, sunucu tarafından yürütülen şablon sözdizimini veya komutlarını enjekte edebildiğinde güvenlik açıkları ortaya çıkar.
+
+
+Ortak Güvenlik Açığı Olan Çerçeveler
+
+Jinja2 (Python) : Flask ve Django gibi birçok Python tabanlı web uygulamasında kullanılan popüler bir şablon motoru.
+
+Twig (PHP) : PHP uygulamaları için güçlü bir şablon motoru.
+
+Velocity (Java) : Java tabanlı uygulamalarda sıklıkla kullanılır.
+
+Mustache : Çeşitli programlama dillerinde kullanılan, mantık gerektirmeyen bir şablon motoru.
+
+Neden Önemli?
+
+SSTI'nin başarılı bir şekilde istismar edilmesi şunlara yol açabilir:
+
+Uzaktan kod yürütme (RCE)
+
+Sunucu güvenliğinin tamamen tehlikeye girmesi
+
+Veri sızdırma
+
+Ayrıcalıkların yükseltilmesi
+
+SSTI Zafiyetlerinin Belirlenmesi
+
+SSTI'yı istismar etmenin ilk adımı, bir uygulamadaki savunmasız noktaları belirlemektir. İşte potansiyel SSTI güvenlik açıklarını nasıl tespit edebileceğiniz:
+
+Adım 1: Şablon Motorlarını Arayın
+
+Başlamak için en kolay yol, uygulamanın sunucu tarafı şablon motoru kullanıp kullanmadığını belirlemektir. Bunu şu yollarla kontrol edebilirsiniz:
+
+HTTP başlıkları : Bazen başlıklar ipuçları içerir (örneğin, X-Powered-By).
+
+URL'ler ve Parametreler : Bazı uygulamalar, kullanıcıların URL veya sorgu parametreleri aracılığıyla şablonlar belirtmesine olanak tanır (örneğin, ?template=profile).
+
+Kaynak Kod veya Yorumlar : Şablonla ilgili değişkenler veya yorumlar için web uygulamasının kaynak kodunu inceleyin.
+
+Adım 2: Şablon Sözdizimini Ekleme
+
+Olası enjeksiyon noktalarını belirledikten sonra, yaygın şablon sözdizimini enjekte ederek ve sunucu yanıtlarını gözlemleyerek SSTI testine başlayın.
+
+
+
+Jinja2 (Python) için : Giriş alanlarına veya URL parametrelerine {{ 7 * 7 }}eklemeyi deneyin .{{ config }}
+
+Twig (PHP) için : Girdinin kod olarak işlenip işlenmediğini görmek için {{ 7 * 7 }}veya kullanın.{{ dump() }}
+
+Velocity (Java) için : #set($foo = "bar")veya ile test edin #parse("exploit.vm").
+
+3. Adım: Hataya Dayalı Geri Bildirim
+
+SSTI testi yaparken, kullanılan şablon motoru hakkında bilgi verebilecek hata mesajlarına dikkat edin. Bu mesajlar genellikle uygulamanın iç işleyişi hakkında yararlı ipuçları sağlar.
+
+Pratik İpucu : İstekleri yakalamak ve şablonlarla bağlantılı olabilecek parametreleri değiştirmek için Burp Suite kullanın . Bu, SSTI güvenlik açıklarını belirlemek için hızlı ve yinelemeli bir yaklaşım sağlar.
+
+
+
+Gelişmiş Sömürü Teknikleri
+
+Bir SSTI güvenlik açığını tespit ettikten sonra, onu istismar etme zamanı gelmiştir. İşte bu güvenlik açığından yararlanmak için bazı gelişmiş teknikler:
+
+
+
+Uzaktan Kod Yürütme (RCE)
+
+Birçok durumda, SSTI güvenlik açıkları tam kod yürütülmesine yol açabilir. SSTI'nin uzaktan kod yürütme (RCE) için kullanımı, kullanılan şablon motoruna ve uygulamanın yapılandırmasına bağlıdır.
+
+
+
+Jinja2 İstismarı
+
+Komut Yürütme Yöntemi__import__ : Uygulama Jinja2 kullanıyorsa ve şablon Python'ın yerleşik fonksiyonlarına erişebiliyorsa, __import__('os').system('ls')komutları yürütmek için bu yöntemi kullanabilirsiniz.
+
+Hassas Dosyalara Erişim : İzin verilirse, . kodunu enjekte ederek hassas dosyalara erişebilirsiniz {{ __import__('os').popen('cat /etc/passwd').read() }}.
+
+Dal Sömürüsü
+
+Komut Çalıştırma : Bazı durumlarda, komut çalıştırmak için system()enjeksiyon yapabilirsiniz .{{ dump(system('ls')) }}
+
+Dosya Dahil Etme : Twig, dosya dahil etmeye izin verebilir ve bu özellik, . gibi dosyaları dahil etmek için kullanılabilir /etc/passwd.
+
+Hızın Sömürülmesi
+
+Uzaktan Kod Yürütme : Velocity şablonları, rastgele kod yürütülmesine olanak sağlayabilir. #set($ex = new java.lang.ProcessBuilder('ls').start())Komut çalıştırmak için şu gibi yükler enjekte etmeyi deneyin.
+
+Dosya Yüklemeleri ve Yol Gezintisi
+
+SSTI, uygulamanın kullanıcı girdisine bağlı olarak dosya yüklemeye izin vermesi durumunda dosya yükleme işlevini istismar etmek için de kullanılabilir. Şablon sözdizimi içeren kötü amaçlı yükler enjekte ederek, sunucunun dosya işleme mantığını değiştirebilir ve kötü amaçlı dosyaları yükleyebilirsiniz.
+
+
+
+Ayrıcalıkların Artması
+
+Şablon motorunun sunucu tarafındaki değişkenlere erişimi varsa, SSTI'yı ayrıcalık yükseltme amacıyla kullanmak mümkündür. Saldırganlar, kimlik doğrulama veya yetkilendirme mantığını değiştiren şablonlar enjekte ederek ayrıcalıklarını yükseltebilirler.
+
+
+
+Pratik Kullanım Örneği
+
+İşte SSTI'nin istismarını göstermek için pratik bir örnek.
+
+
+
+Güvenlik açığı bulunan giriş alanını belirleyin : Giriş formu, kullanıcıya özel içeriği görüntülemek için bir şablon motoru kullanır. {{ 7 * 7 }}Kullanıcı adı alanına giriş yapıyorsunuz.
+Yanıtı gözlemleyin : Sunucu 49, şablon motorunun girdiyi işlediğini gösteren bir yanıt gönderir.
+Uzaktan Kod Yürütme (RCE) Seviyesine Yükseltme : Şimdi, {{ __import__('os').system('ls') }}sunucuda komut çalıştırmak ve dosyaları listelemek için enjeksiyon yapın.
+Daha fazla erişim elde edin : Buradan, daha karmaşık zararlı yazılımlar enjekte ederek root erişimine kadar yükselebilirsiniz.

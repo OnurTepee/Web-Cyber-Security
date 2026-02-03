@@ -1,0 +1,142 @@
+SQL NEDİR ? :
+    SQL , veritabanlarındaki verilerin saklanması , değiştirilmesi ve alınması için kullanılan standart bir dildir.
+    SQL (Yapısal Sorgu Dili — Yapılandırılmış Sorgu Dili) veritabanlarına ve bunların kullanımına yönelik olarak kullanılan bir dildir.
+    SQL ile sorgulamayı gerçekleştiren birçok yazılım vardır. Bunların en çok bilinenleri MySQL, MsSQL, Oracle gibi sıralayabiliriz.
+
+SQL TEMELDE 3 ALT İFADE GRUBUNDAN OLUŞUR
+
+1-Veri Tanımlama Dili (DATA DEFINATION LANGUAGE(DDL)):
+    Tablo, trigger, view gibi veritabanı nesneleri tanımlanır.
+    3 temel ifade içerir CREATE, ALTER, DROP
+
+2- Veri İşleme Dili (DATA MANUPLATION LANGUAGE (DML)) :
+    Veri üzerinde düzenleme yapar bu komutlar :
+    INSERT,UPDATE,DELETE,SELECT
+
+3- Veri Kontrol Dili (DATA CONTROL LANGUAGE (DCL)) :
+    VTYS’de tanımlı roller ve kullanıcılar için ifade ve nesne kullanma izni tanımlar.
+    3 temel ifade içerir GRANT ,REVOKE,DENY
+
+    Grant; erişim izni verir.
+    Revoke; erişim iznini kaldırır.
+    Deny; erişim engeller.
+
+SQL Enjeksiyonu
+    SQL enjeksiyonu, veritabanınızı yok edebilecek bir kod enjeksiyon tekniğidir.
+    SQL enjeksiyonu, en yaygın web saldırı tekniklerinden biridir.
+    SQL enjeksiyonu, web sayfası girdisi yoluyla SQL sorgularına kötü amaçlı kod yerleştirilmesidir.
+
+Web Sayfalarında SQL
+    SQL enjeksiyonu genellikle, kullanıcıdan kullanıcı adı/kullanıcı kimliği gibi bir girdi istediğinizde ve kullanıcı size ad/kimlik yerine, farkında olmadan veritabanınızda çalıştıracağınız bir SQL ifadesi verdiğinde meydana gelir.
+
+    Aşağıdaki örnekte, SELECTbir değişkeni (txtUserId) bir sorgu dizesine ekleyerek bir ifade oluşturulmaktadır.
+    Değişken, kullanıcı girişinden (getRequestString) alınmaktadır:
+
+    Örnek
+    Kendi SQL Server'ınızı edinin.
+
+    txtUserId = getRequestString("UserId");
+    txtSQL = "SELECT * FROM Users WHERE UserId = " + txtUserId;
+
+    Bu bölümün geri kalanında, SQL sorgularında kullanıcı girdisi kullanmanın potansiyel tehlikeleri açıklanmaktadır.
+
+1=1'in Her Zaman Doğru Olduğu Temelli SQL Enjeksiyonu
+    Yukarıdaki örneğe tekrar bakın.
+    Kodun asıl amacı, belirli bir kullanıcı kimliğine sahip bir kullanıcıyı seçmek için bir SQL sorgusu oluşturmaktı.
+
+    Kullanıcının "yanlış" girdi girmesini engelleyecek hiçbir şey yoksa, kullanıcı şu şekilde "akıllı" girdiler girebilir:
+
+    Kullanıcı kimliği:
+    105 OR 1=1
+
+    Ardından, SQL sorgusu şu şekilde görünecektir:
+    SELECT * FROM Users WHERE UserId = 105 OR 1=1;
+
+    Yukarıdaki SQL sorgusu geçerlidir ve OR 1=1 her zaman DOĞRU olduğundan "Users" tablosundaki TÜM satırları döndürecektir .
+
+    Yukarıdaki örnek tehlikeli görünüyor mu?
+    Ya "Kullanıcılar" tablosu isimler ve şifreler içeriyorsa?
+
+    Yukarıdaki SQL sorgusu, aşağıdakiyle neredeyse aynıdır:
+    SELECT UserId, Name, Password FROM Users WHERE UserId = 105 or 1=1;
+
+    Bir bilgisayar korsanı, giriş alanına 105 OR 1=1 yazarak veritabanındaki tüm kullanıcı adlarına ve şifrelerine erişebilir.
+
+SQL Enjeksiyonu ""="" Temelinde Her Zaman Doğrudur
+    İşte bir web sitesinde kullanıcı girişine örnek:
+
+    Kullanıcı adı: John Doe
+    Şifre: myPass
+
+    Örnek
+    uName = getRequestString("username");
+    uPass = getRequestString("userpassword");
+
+    sql = 'SELECT * FROM Users WHERE Name ="' + uName + '" AND Pass ="' + uPass + '"'
+
+    Sonuç
+    SELECT * FROM Users WHERE Name ="John Doe" AND Pass ="myPass"
+
+    Bir bilgisayar korsanı, kullanıcı adı veya parola metin kutusuna "VEYA "=" ifadesini girerek veritabanındaki kullanıcı adlarına ve parolalara erişim sağlayabilir:
+
+    Kullanıcı adı: " or ""="
+    Şifre: " or ""="
+
+    Sunucu tarafındaki kod, aşağıdaki gibi geçerli bir SQL sorgusu oluşturacaktır:
+
+    Sonuç
+    SELECT * FROM Users WHERE Name ="" or ""="" AND Pass ="" or ""=""
+
+    Yukarıdaki SQL sorgusu geçerlidir ve OR ""="" her zaman TRUE olduğundan "Users" tablosundaki tüm satırları döndürecektir .
+
+Toplu SQL Sorgularına Dayalı SQL Enjeksiyonu
+    Çoğu veritabanı toplu SQL sorgularını destekler.
+
+    Bir SQL ifadesi grubu, noktalı virgülle ayrılmış iki veya daha fazla SQL ifadesinden oluşur.
+
+    Aşağıdaki SQL sorgusu, "Users" tablosundaki tüm satırları döndürecek ve ardından "Suppliers" tablosunu silecektir.
+
+    Örnek
+    SELECT * FROM Users; DROP TABLE Suppliers
+
+    Aşağıdaki örneğe bakın:
+
+    Örnek
+    txtUserId = getRequestString("UserId");
+    txtSQL = "SELECT * FROM Users WHERE UserId = " + txtUserId;
+
+    Ve aşağıdaki girdi:
+
+    Kullanıcı kimliği:
+    105; DROP TABLE Suppliers
+
+    Geçerli SQL sorgusu şu şekilde görünür:
+
+    Sonuç
+    SELECT * FROM Users WHERE UserId = 105; DROP TABLE Suppliers;
+
+Koruma için SQL Parametrelerini Kullanın
+    Bir web sitesini SQL enjeksiyonundan korumak için SQL parametrelerini kullanabilirsiniz.
+
+    SQL parametreleri, bir SQL sorgusuna yürütme zamanında kontrollü bir şekilde eklenen değerlerdir.
+
+    ASP.NET Razor Örneği
+    txtUserId = getRequestString("UserId");
+    txtSQL = "SELECT * FROM Users WHERE UserId = @0";
+    db.Execute(txtSQL,txtUserId);
+
+    SQL sorgusunda parametrelerin @ işaretiyle gösterildiğini unutmayın.
+
+    SQL motoru, her parametrenin ilgili sütun için doğru olduğundan emin olmak için kontrol eder ve bu parametreleri yürütülecek SQL sorgusunun bir parçası olarak değil, olduğu gibi ele alır.
+
+    Başka bir örnek
+    txtNam = getRequestString("CustomerName");
+    txtAdd = getRequestString("Address");
+    txtCit = getRequestString("City");
+
+    txtSQL = "INSERT INTO Customers (CustomerName,Address,City) Values(@0,@1,@2)";
+    db.Execute(txtSQL,txtNam,txtAdd,txtCit);
+
+Kaynakça:
+    https://www.w3schools.com/sql/sql_injection.asp
+    https://medium.com/@orhanturkmenoglu/sql-nedi%CC%87r-temel-sql-komutlari-sqle-dai%CC%87r-her%C5%9Fey-b5271828232e

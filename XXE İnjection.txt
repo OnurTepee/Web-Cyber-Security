@@ -1,0 +1,86 @@
+XML harici varlık enjeksiyonu nedir?
+    XML harici varlık enjeksiyonu (XXE olarak da bilinir), bir saldırganın bir uygulamanın XML verilerini işlemesine müdahale etmesine olanak tanıyan bir web güvenlik açığıdır. Genellikle saldırganın uygulama sunucusu dosya sistemindeki dosyaları görüntülemesine ve uygulamanın erişebildiği herhangi bir arka uç veya harici sistemle etkileşim kurmasına olanak tanır.
+    Bazı durumlarda, bir saldırgan, XXE güvenlik açığını kullanarak sunucu tarafı istek sahteciliği (SSRF) saldırıları gerçekleştirerek, XXE saldırısını tırmandırıp altta yatan sunucuyu veya diğer arka uç altyapısını tehlikeye atabilir.
+
+XXE güvenlik açıkları nasıl ortaya çıkar?
+    Bazı uygulamalar, tarayıcı ile sunucu arasında veri iletmek için XML formatını kullanır. Bunu yapan uygulamalar, XML verilerini sunucuda işlemek için neredeyse her zaman standart bir kütüphane veya platform API'si kullanır. XXE güvenlik açıkları, XML spesifikasyonunun çeşitli potansiyel olarak tehlikeli özellikler içermesi ve standart ayrıştırıcıların, uygulama tarafından normalde kullanılmasalar bile bu özellikleri desteklemesi nedeniyle ortaya çıkar.
+
+XXE saldırılarının türleri nelerdir?
+    Çeşitli XXE saldırı türleri vardır:
+        Exploiting XXE to retrieve files:bu işlemde, dosyanın içeriğini içeren harici bir varlık tanımlanıyor ve uygulamanın yanıtında bu varlık döndürülüyor.
+        Exploiting XXE to perform SSRF attacks:bu saldırılarda harici bir varlık, arka uç sistemine ait bir URL üzerinden tanımlanıyor.
+        Exploiting blind XXE exfiltrate data out-of-band:Kör XXE saldırıları , hassas verilerin uygulama sunucusundan saldırganın kontrolündeki bir sisteme iletilmesi yoluyla
+        Exploiting blind XXE to retrieve data via error messages:burada saldırgan hassas veriler içeren bir ayrıştırma hatası mesajını tetikleyebilir.
+
+XXE açığından yararlanarak dosyaları ele geçirme
+    Sunucunun dosya sisteminden rastgele bir dosya elde eden bir XXE enjeksiyon saldırısı gerçekleştirmek için, gönderilen XML'i iki şekilde değiştirmeniz gerekir:
+    DOCTYPEDosyanın yolunu içeren harici bir varlığı tanımlayan bir öğe ekleyin (veya düzenleyin) .
+    Uygulamanın yanıtında döndürülen XML'deki bir veri değerini düzenleyerek, tanımlanmış harici varlığı kullanın.
+    Örneğin, bir alışveriş uygulamasının bir ürünün stok seviyesini kontrol etmek için sunucuya aşağıdaki XML'i gönderdiğini varsayalım:
+    <?xml version="1.0" encoding="UTF-8"?>
+    <stockCheck><productId>381</productId></stockCheck>
+    /etc/passwdUygulama, XXE saldırılarına karşı özel bir savunma mekanizması uygulamamaktadır; bu nedenle , aşağıdaki XXE saldırı kodunu göndererek XXE güvenlik açığından faydalanabilir ve dosyayı ele geçirebilirsiniz :
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE foo [ <!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+    <stockCheck><productId>&xxe;</productId></stockCheck>
+    Bu XXE saldırı yükü, &xxe;değeri dosyanın içeriği olan harici bir varlık tanımlar /etc/passwdve bu varlığı productIddeğer içinde kullanır. Bu durum, uygulamanın yanıtının dosyanın içeriğini içermesine neden olur:
+    
+    Invalid product ID: root:x:0:0:root:/root:/bin/bash
+    daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+    bin:x:2:2:bin:/bin:/usr/sbin/nologin
+    
+    XXE açığından yararlanarak SSRF saldırıları gerçekleştirme
+    Hassas verilerin ele geçirilmesinin yanı sıra, XXE saldırılarının diğer önemli etkisi, sunucu tarafı istek sahteciliği (SSRF) gerçekleştirmek için kullanılabilmeleridir. Bu, sunucu tarafındaki uygulamanın, sunucunun erişebildiği herhangi bir URL'ye HTTP istekleri göndermeye yönlendirilebileceği potansiyel olarak ciddi bir güvenlik açığıdır.
+    
+    Bir XXE güvenlik açığından yararlanarak SSRF saldırısı gerçekleştirmek için, hedeflemek istediğiniz URL'yi kullanarak harici bir XML varlığı tanımlamanız ve tanımlanan varlığı bir veri değeri içinde kullanmanız gerekir. Tanımlanan varlığı, uygulamanın yanıtında döndürülen bir veri değeri içinde kullanabiliyorsanız, URL'den gelen yanıtı uygulamanın yanıtı içinde görüntüleyebilir ve böylece arka uç sistemle çift yönlü etkileşim kurabilirsiniz. Aksi takdirde, yalnızca kör SSRF saldırıları gerçekleştirebilirsiniz (ki bu da kritik sonuçlar doğurabilir).
+    Aşağıdaki XXE örneğinde, harici varlık, sunucunun kuruluşun altyapısı içindeki bir iç sisteme arka uç HTTP isteği göndermesine neden olacaktır:
+    
+    <!DOCTYPE foo [ <!ENTITY xxe SYSTEM "http://internal.vulnerable-website.com/"> ]>
+
+Kör XXE güvenlik açıkları
+    XXE güvenlik açıklarının birçok örneği kör güvenlik açığıdır. Bu, uygulamanın yanıtlarında tanımlanmış harici varlıkların değerlerini döndürmediği ve bu nedenle sunucu tarafındaki dosyalara doğrudan erişimin mümkün olmadığı anlamına gelir.
+    Kör XXE güvenlik açıkları hala tespit edilebilir ve istismar edilebilir, ancak daha gelişmiş teknikler gereklidir. Bazen güvenlik açıklarını bulmak ve veri sızdırmak için bant dışı teknikler kullanabilirsiniz. Ayrıca, hata mesajlarında hassas verilerin ifşa edilmesine yol açan XML ayrıştırma hatalarını da tetikleyebilirsiniz.
+
+XXE enjeksiyonu için gizli saldırı yüzeyini bulma
+    XXE enjeksiyon güvenlik açıklarına yönelik saldırı yüzeyi birçok durumda açıktır, çünkü uygulamanın normal HTTP trafiği XML formatında veri içeren istekler içerir. Diğer durumlarda ise saldırı yüzeyi daha az görünürdür. Ancak, doğru yerlere bakarsanız, XML içermeyen isteklerde de XXE saldırı yüzeyini bulabilirsiniz.
+
+XInclude saldırıları
+    Bazı uygulamalar istemci tarafından gönderilen verileri alır, sunucu tarafında bir XML belgesine yerleştirir ve ardından belgeyi ayrıştırır. Bunun bir örneği, istemci tarafından gönderilen verilerin bir arka uç SOAP isteğine yerleştirilmesi ve ardından arka uç SOAP servisi tarafından işlenmesidir.
+    Bu durumda, klasik bir XXE saldırısı gerçekleştiremezsiniz çünkü tüm XML belgesini kontrol etmiyorsunuz ve bu nedenle bir DOCTYPEöğeyi tanımlayamaz veya değiştiremezsiniz. Ancak, bunun yerine kullanabilirsiniz XInclude. XIncludeXML belgesinin alt belgelerden oluşturulmasına olanak tanıyan XML spesifikasyonunun bir parçasıdır. Bir saldırıyı bir XML belgesindeki herhangi bir veri değerine yerleştirebilirsiniz XInclude, bu nedenle saldırı, sunucu tarafındaki bir XML belgesine yerleştirilen yalnızca tek bir veri öğesini kontrol ettiğiniz durumlarda gerçekleştirilebilir.
+    Bir saldırı gerçekleştirmek için , ad alanına referans vermeniz ve dahil etmek istediğiniz dosyanın yolunu belirtmeniz XIncludegerekir . Örneğin:XInclude
+    <foo xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xi:include parse="text" href="file:///etc/passwd"/></foo>
+
+Dosya yükleme yoluyla XXE saldırıları
+    Bazı uygulamalar, kullanıcıların sunucu tarafında işlenecek dosyaları yüklemesine olanak tanır. Bazı yaygın dosya formatları XML kullanır veya XML alt bileşenleri içerir. XML tabanlı formatlara örnek olarak DOCX gibi ofis doküman formatları ve SVG gibi görüntü formatları verilebilir.
+    Örneğin, bir uygulama kullanıcıların resim yüklemesine izin verebilir ve yüklendikten sonra bu resimleri sunucuda işleyebilir veya doğrulayabilir. Uygulama PNG veya JPEG gibi bir format bekliyor olsa bile, kullanılan resim işleme kütüphanesi SVG resimlerini destekleyebilir. SVG formatı XML kullandığı için, bir saldırgan kötü amaçlı bir SVG resmi gönderebilir ve böylece XXE güvenlik açıkları için gizli saldırı yüzeyine ulaşabilir.
+
+Değiştirilmiş içerik türü aracılığıyla XXE saldırıları
+    Çoğu POST isteği, HTML formları tarafından oluşturulan varsayılan bir içerik türü kullanır; örneğin <p> application/x-www-form-urlencoded. Bazı web siteleri bu formatta istek almayı bekler ancak XML dahil olmak üzere diğer içerik türlerine de tolerans gösterir.
+    Örneğin, normal bir istek aşağıdaki bilgileri içeriyorsa:
+    POST /action HTTP/1.0
+    Content-Type: application/x-www-form-urlencoded
+    Content-Length: 7
+    
+    foo=bar
+    O halde aşağıdaki isteği de gönderebilirsiniz, sonuç aynı olacaktır:
+    
+    POST /action HTTP/1.0
+    Content-Type: text/xml
+    Content-Length: 52
+    
+    <?xml version="1.0" encoding="UTF-8"?><foo>bar</foo>
+    Eğer uygulama, mesaj gövdesinde XML içeren istekleri tolere ediyorsa ve gövde içeriğini XML olarak ayrıştırıyorsa, istekleri XML formatını kullanacak şekilde yeniden biçimlendirerek gizli XXE saldırı yüzeyine ulaşabilirsiniz.
+
+XXE güvenlik açıklarını nasıl bulup test edebilirsiniz?
+    XXE güvenlik açıklarının büyük çoğunluğu, Burp Suite'in web güvenlik açığı tarayıcısı kullanılarak hızlı ve güvenilir bir şekilde bulunabilir.
+    XXE güvenlik açıklarını manuel olarak test etmek genellikle şunları içerir:
+    İşletim sisteminde bilinen bir dosyaya dayalı harici bir varlık tanımlayarak ve bu varlığı uygulamanın yanıtında döndürülen verilerde kullanarak dosya alma işlemini test etme .
+    Kontrolünüz altındaki bir sisteme ait URL'ye dayalı harici bir varlık tanımlayarak ve bu sistemle olan etkileşimleri izleyerek kör XXE güvenlik açıklarını test etmek . Burp Collaborator bu amaç için mükemmeldir.
+    Kullanıcı tarafından sağlanan XML olmayan verilerin sunucu tarafındaki bir XML belgesine dahil edilmesinin güvenlik açığı oluşturup oluşturmadığını test etmek için, bilinen bir işletim sistemi dosyasını elde etmeye çalışan bir XInclude saldırısı kullanılıyor.
+XXE güvenlik açıklarından nasıl korunulur?
+    XXE güvenlik açıklarının neredeyse tamamı, uygulamanın XML ayrıştırma kütüphanesinin, uygulamanın ihtiyaç duymadığı veya kullanmayı amaçlamadığı potansiyel olarak tehlikeli XML özelliklerini desteklemesinden kaynaklanır. XXE saldırılarını önlemenin en kolay ve etkili yolu, bu özellikleri devre dışı bırakmaktır.
+    Genellikle, harici varlıkların çözümlenmesini devre dışı bırakmak ve desteği devre dışı bırakmak yeterlidir XInclude. Bu genellikle yapılandırma seçenekleri aracılığıyla veya varsayılan davranışı programatik olarak geçersiz kılarak yapılabilir. Gereksiz yetenekleri nasıl devre dışı bırakacağınız hakkında ayrıntılı bilgi için XML ayrıştırma kitaplığınızın veya API'nizin belgelerine bakın.
+
+Kaynakça:
+    https://portswigger.net/web-security/xxe

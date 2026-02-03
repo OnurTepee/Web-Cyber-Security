@@ -1,0 +1,46 @@
+Clickjacking(Tıkırdama):
+    Bir site iframe yükleyebilirsek o siteye zaten istediğimiz yönlendirme yaparız
+ÖR:
+    Ücretsiz iphone butonu koydun sitene ama o buton iframe buton ve butona iframe açık olan sitede yüklersek o sitede hesabı sil butonuna yönlendirirsek hesap silinir
+
+Clickjacking Önleme
+
+    Bu saldırıya karşı alabileceğimiz iki önlem vardır;
+    Client-side Yöntemi – En yaygın kullanılanı Frame Busting methodudur. Client-side yani kullanıcı tarafında olan bitenlerdir. Bu yöntem bir önlemde olsa kolayca aşılabileceği için tavsiye edilmez.
+    Server-side Yöntemi – Bir okadar sağlam en yaygın kullanılanı X-Frame-Options dediğimiz yöntemdir. Arka uç dediğimiz sunucu tarafı methodudur. Bil. Güvenlik Uzmanları tarafından önerilen, Clickjacking’den korunmanın etkili bir yoludur.
+
+X-Frame-Options Header’ı ile Clickjacking Önleme
+    X-Frame-Options header(başlık) yanıtı dediğimiz bir web sayfasındaki HTTP yanıtının bir parçası olarak bir tarayıcının bir <FRAME> veya <İFRAME> etiketinin içinde bir sayfa oluşturmasına izin verilip verilmeyeceğini belirtir.
+    
+    X-Frame-Options Başlığı için izin verilen 3 temel kural mevcuttur;
+    
+    DENY – Bu yöntemle mevcut sayfamızın iframe içerisinde çağrılması kısıtlanmış olur.
+    SAMEORIGIN – Mevcut sayfanın başka bir sayfa içersinde yalnızca geçerli alanda görüntülenmesine olanak sağlar.
+    ALLOW-FROM URI – Mevcut sayfanın başka bir sayfa içersinde görüntülenmesini sağlar fakat yalnızca belirtilen URI ‘de. Örneğin, www.orneksite.com/frame-sayfası
+
+Clickjacking’den Korunmak için SAMEORIGIN Kullanmak
+    X-Frame-Options, içerik yayımlayan kullanıcıların kendi yayınladığı içeriklerinin saldırganlar tarafından gizli bir şekilde kullanılmasını engellemesine olanak tanır.
+    DENY kalıbı, mevcut sayfanın bir çerçevedeki herhangi bir biçimde kullanımını engelleyen en güvenli yöntemdir. Daha sık kullanılan SAMEORIGIN kuralıda geçerli çerçevede sınırlayarak kullanıma olanak sağlar.
+
+X-Frame-Options Kısıtlamaları
+    Bir web sitesinde SAMEORIGIN kullanımı için X-Frame-Options header’ının her bir sayfa için HTTP yanıtının bir parçası olarak döndürülmesi gerekir yani çarpraz siteler arası uygulanamaz.
+    X-Frame-Options izin verilen domainlerin/alan adlarının bir beyaz listesini yani whitelist’ını desteklemediği için, aralarında çerçeveli içerik göstermesi gereken çoklu web siteleriyle çalışmaz.
+    Tek sayfada yalnızca bir kural kullanılabilir. Örneğin, aynı sayfanın hem mevcut web sitesinde hem de harici bir sitede bir çerçeve olarak görüntülenmesi mümkün olmuyor
+    ALLOW-FROM kuralı tüm tarayıcılar tarafından desteklenmemekte.
+    X-Frame-Options Header’ı ise günümüzde çoğu tarayıcıdan desteği kesilmiş bir kuraldır.
+
+Web sayfanız Clickjacking’e Karşı Savunmasız mı?
+    Sitenizin Clickjacking saldırısına karşı savunmasız olup olmadığını basit bir HTML ile sitenize iframe içersine mevcut sayfa linkinizi ekleyerek anlayabilirsiniz. Bu sıradan bir test etme yöntemidir. Aşağıda da bunun örneğini inceleyebilirsiniz.
+    <html>
+    <head>
+    <title>Clickjacking Test Sayfası</title>
+    </head>
+    <body>
+    <p>Web sayfanız Clickjacking saldırılarına açık!</p>
+    <iframe src="https://www.websiteniz.com/ornek-sayfa" width="500" height="500"></iframe>
+    </body>
+    </html>
+    Bu kodu girdiğiniz HTML sayfasını tarayıcıda açın.
+    “Web sayfanız Clickjacking saldırılarına açık” metni görünür ve alt kısımda linki eklenen sayfayı görürseniz, websiteniz Clickjacking’e karşı savunmasızdır.
+    Yalnızca “Web sayfanız Clickjacking saldırılarına açık!” ifadesi görünürse ve linki eklenen sayfanın içeriğini göremiyorsanız, websiteniz Clickjacking’e karşı savunmasız değildir.
+    Tabiki bununla beraber, sitede hangi anti-clickjacking yöntemlerinin kullanıldığını ve saldırganlar tarafından aşılıp aşılamayacağını görmek için bir takım ek testler gereklidir. Aynı zamanda site içeriğinizin diğer sitelerde çerçevelenmesini önleyen bir takım yöntemler geliştirilmiştir bunlar WAF dediğimiz ücretli yöntemler sınıfına giriyor. Düşünürseniz sizin için bunları takip edecek,analiz edecek ve engelleyecek sistemlerde mevcut.

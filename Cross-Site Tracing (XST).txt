@@ -1,0 +1,68 @@
+Çapraz Site İzleme
+  Tanım
+    Çapraz Site İzleme (XST) saldırısı, Çapraz Site Komut Dosyası Çalıştırma (XSS) ve TRACE veya TRACK HTTP yöntemlerinin kullanımını içerir . RFC 2616'ya göre , “TRACE, istemcinin istek zincirinin diğer ucunda ne alındığını görmesine ve bu verileri test veya teşhis bilgileri için kullanmasına olanak tanır.” TRACK yöntemi de aynı şekilde çalışır ancak Microsoft'un IIS web sunucusuna özgüdür. XST, çerezde “ HttpOnly ” bayrağı ayarlanmış olsa veya kullanıcının Yetkilendirme başlığını ifşa etse bile , Çapraz Site Komut Dosyası Çalıştırma (XSS) yoluyla kullanıcının çerezlerini çalmak için bir yöntem olarak kullanılabilir.
+    Görünüşte zararsız olan TRACE yöntemi, bazı senaryolarda meşru kullanıcıların kimlik bilgilerini çalmak için başarıyla kullanılabilir. Bu saldırı tekniği, 2003 yılında Jeremiah Grossman tarafından, Microsoft'un Internet Explorer 6 SP1'de çerezlere JavaScript tarafından erişimi engellemek için tanıttığı HttpOnly etiketini atlatma girişiminde keşfedilmiştir. Aslında, Çapraz Site Komut Dosyası Çalıştırma (XSS) saldırılarında en sık tekrarlanan saldırı modellerinden biri, document.cookie nesnesine erişmek ve onu saldırgan tarafından kontrol edilen bir web sunucusuna göndermektir, böylece kurbanın oturumunu ele geçirebilirler. Bir çerezi HttpOnly olarak etiketlemek , JavaScript'in ona erişmesini engeller ve üçüncü bir tarafa gönderilmesini önler. Ancak, TRACE yöntemi bu korumayı atlatmak ve bu senaryoda bile çereze erişmek için kullanılabilir.
+    Modern tarayıcılar artık JavaScript aracılığıyla TRACE isteklerinin yapılmasını engelliyor, ancak Java gibi yöntemler kullanılarak tarayıcılarla TRACE istekleri göndermenin başka yolları da keşfedildi.
+
+   Örnekler
+    cURL'ü komut satırından kullanarak, TRACE özelliği etkinleştirilmiş localhost'taki bir web sunucusuna TRACE isteği gönderme örneği. Web sunucusunun kendisine gönderilen isteğe nasıl yanıt verdiğine dikkat edin.
+
+$ curl -X TRACE 127.0.0.1
+TRACE / HTTP/1.1
+User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5
+Host: 127.0.0.1
+Accept: */*
+  Bu örnekte, istekle birlikte bir Çerez başlığı gönderdiğimizi ve bunun web sunucusunun yanıtında da yer aldığını fark edin.
+
+$ curl -X TRACE -H "Cookie: name=value" 127.0.0.1
+TRACE / HTTP/1.1
+User-Agent: curl/7.24.0 (x86_64-apple-darwin12.0) libcurl/7.24.0 OpenSSL/0.9.8r zlib/1.2.5
+Host: 127.0.0.1
+Accept: */*
+Cookie: name=value
+  Bu örnekte TRACE yöntemi devre dışı bırakılmıştır; gönderdiğimiz istek yerine hata aldığımıza dikkat edin.
+
+$ curl -X TRACE 127.0.0.1
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>405 Method Not Allowed</title>
+</head><body>
+<h1>Method Not Allowed</h1>
+<p>The requested method TRACE is not allowed for the URL /.</p>
+</body></html>
+  Örnek JavaScript XMLHttpRequest TRACE isteği. Firefox 19.0.2'de çalışmaz ve "Geçersiz Değer" hatası döndürür. Google Chrome 25.0.1364.172'de çalışmaz ve "Yakalanmayan Hata: SecurityError: DOM İstisnası 18" hatası döndürür. Bunun nedeni, modern tarayıcıların XST'yi azaltmaya yardımcı olmak için XMLHttpRequest'teki TRACE yöntemini engellemesidir.
+
+<script>
+  var xmlhttp = new XMLHttpRequest();
+  var url = 'http://127.0.0.1/';
+
+  xmlhttp.withCredentials = true; // send cookie header
+  xmlhttp.open('TRACE', url, false);
+  xmlhttp.send();
+</script>
+İyileştirme
+  Apache
+    Apache 1.3.34, 2.0.55 ve sonraki sürümlerinde, ana yapılandırma dosyasında TraceEnable yönergesini "off" olarak ayarlayın ve ardından Apache'yi yeniden başlatın. Daha fazla bilgi için TraceEnable bölümüne bakın.
+    TraceEnable off
+
+XST'nin Riskleri
+    XST saldırıları çeşitli açılardan çok zararlı ve sinsi olma potansiyeline sahiptir
+        Veri Hırsızlığı - Çerezler ve Oturum Ele Geçirme
+        Yetkisiz İşlemler:Hesap Ele Geçirme
+XST Güvenlik Açıklarına Karşı Nasıl Korunulur?
+    TRACE Yöntemini Devre Dışı BırakınGiriş Doğrulama ve Temizleme
+    Giriş Doğrulama ve TemizlemeWeb Uygulama Güvenlik Duvarı (WAF)
+    Çıktı Kodlaması
+    Güvenlik Yama Yönetimi
+    Düzenli Güvenlik Denetimleri
+    Güvenlik Başlıkları
+    Hata Yönetimi
+    Güvenli Çerezler
+    Erişim Kontrolleri
+    Olay Müdahale Planı
+    Geliştiricileri ve Personeli Eğitin
+    Düzenli Güvenlik Güncellemeleri
+    İzleme ve Kayıt Tutma
+
+Kaynak:
+  https://owasp.org/www-community/attacks/Cross_Site_Tracing

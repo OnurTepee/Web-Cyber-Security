@@ -1,0 +1,86 @@
+XSS Nedir?
+
+Cross-Site Scripting (XSS), saldırganların bir web sayfasında kötü amaçlı betikler (JavaScript gibi) çalıştırarak, kullanıcıların verilerini çalması, oturumlarını ele geçirmesi veya başka zararlı eylemler gerçekleştirmesi amacıyla gerçekleştirdiği bir tür saldırıdır. XSS saldırıları genellikle web uygulamalarındaki güvenlik açıklarından yararlanarak, kullanıcılara zarar vermek için kötü amaçlı kodları enjekte eder.
+
+
+
+
+
+XSS Türleri:
+
+
+
+
+Yansıtılmış XSS (Reflected XSS):
+
+Yansıtılmış XSS saldırıları, enjekte edilen betiğin web sunucusundan yansıtıldığı saldırılardır. Örneğin, kullanıcıdan gelen veriler (arama sorgusu veya hata mesajı gibi) web sunucusu tarafından yansıtıldığında, saldırganın kötü amaçlı JavaScript kodu, kurbanın tarayıcısında çalıştırılabilir.
+
+Örnek: Saldırgan, kurbanı kötü amaçlı bir bağlantıya tıklamaya veya özel olarak hazırlanmış bir formu göndermeye kandırarak, web sunucusuna zararlı bir istekte bulunur. Web sunucusu, gelen veriyi (örneğin, arama sonucu) içeren yanıtı kurbana gönderir. Tarayıcı bu yanıtı, kaynağını güvenli kabul ederek çalıştırır.
+
+
+
+Depolanmış XSS (Stored XSS):
+
+Depolanmış XSS saldırıları, kötü amaçlı JavaScript kodunun hedef sunucularda, örneğin bir veritabanında, forumda, yorum alanında vb. kalıcı olarak saklandığı saldırılardır.
+
+Örnek: Kurban bir sayfayı ziyaret ettiğinde, daha önce saldırgan tarafından eklenmiş zararlı JavaScript kodu sayfada çalıştırılır. Depolanmış XSS, kurbanın her ziyaretinde çalışabilir.
+
+
+
+DOM XSS (Document Object Model XSS):
+
+DOM XSS, kullanıcının tarayıcıda DOM (Document Object Model) manipülasyonu ile gerçekleşen bir saldırıdır. Bu saldırılar, sayfa içindeki verilerin kullanıcı tarafından değiştirilmesiyle ortaya çıkar.
+
+Örnek: JavaScript, kullanıcının tarayıcıdaki DOM üzerinde işlem yaparak zararlı kod çalıştırmasına neden olabilir.
+
+
+
+Blind Cross-Site Scripting:
+
+Blind XSS saldırıları, saldırganın XSS payload'ının çalışıp çalışmadığını doğrulayamaması durumunda ortaya çıkar. Saldırgan, kötü amaçlı kodu hedef web sitesine enjekte eder, ancak sonucun görünmesini engelleyebilir. Bu, genellikle yönetici paneli veya kullanıcının etkileşimi gerektiren bir ortamda olur.
+
+
+
+XSS'e Karşı Korunma Yöntemleri:
+
+Web siteleri XSS saldırılarına karşı korunmak için aşağıdaki yöntemleri uygulamalıdır:
+
+Veri Doğrulama ve Temizleme:
+
+Kullanıcıdan gelen tüm veriler, özellikle URL parametreleri, form verileri ve başlıklar dikkatle kontrol edilmelidir.
+
+İzin verilen veri türlerini sınırlayın (örneğin, sadece sayılar veya harfler kabul edilebilir).
+
+Çift Kodlama (Double Encoding):
+
+Bazı XSS saldırıları, kodların doğru şekilde işlenmesi için çift kodlama gerektirir. Bu nedenle, kullanıcı girdileri doğru şekilde encode edilmelidir.
+
+HTML ve JavaScript Kodlarını Kodlayın:
+
+Kullanıcı verilerini HTML ve JavaScript içinde kullanmadan önce doğru şekilde encode edin. Örneğin, HTML için encodeForHTML(), JavaScript için encodeForJavaScript() fonksiyonlarını kullanabilirsiniz.
+
+Content Security Policy (CSP):
+
+CSP, tarayıcılara yalnızca belirli güvenli kaynaklardan içerik yüklemeleri talimatı veren bir güvenlik önlemidir. CSP, XSS saldırılarının etkilerini azaltabilir ve zararlı betiklerin çalışmasını engelleyebilir.
+
+HTTP-Only ve Secure Cookie Bayrakları:
+
+Kullanıcı oturumlarını çalmak amacıyla kullanılan XSS saldırılarını önlemek için, oturum çerezlerine HttpOnly ve Secure bayrakları ekleyerek, bu çerezlere yalnızca sunucu tarafından erişilmesini sağlayabilirsiniz.
+
+Erişim Kontrolleri ve Yetkilendirme:
+
+Kullanıcıların yalnızca kendi verilerine erişebilmesini ve düzenleyebilmesini sağlamak için erişim kontrolü ve yetkilendirme mekanizmaları uygulayın.
+
+
+
+Kaynakça:
+
+    https://owasp.org/www-community/attacks/xss/
+
+    https://owasp.org/www-project-web-security-testing-guide/
+
+    https://owasp.org/www-community/Types_of_Cross-Site_Scripting
+
+    https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html
+
+    https://owasp.org/www-community/Types_of_Cross-Site_Scripting
